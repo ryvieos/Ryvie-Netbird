@@ -9,7 +9,7 @@ import Combine
 
 class PeerViewModel: ObservableObject {
     @Published var peerInfo: [PeerInfo] = []  
-    @Published var selectionFilter: String = "All"
+    @Published var selectionFilter: String = "Connected"
     @Published var peerFilter: String = ""
     
     @Published var tappedPeer: PeerInfo? = nil

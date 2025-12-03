@@ -58,6 +58,12 @@ struct SideMenu: View {
                 Group {
                     menuNavigationLink(
                         imageName: "menu-advance",
+                        label: "Setup Key",
+                        destination: SetupKeyView()
+                    )
+                    
+                    menuNavigationLink(
+                        imageName: "menu-advance",
                         label: "Advanced",
                         destination: AdvancedView()
                     )

@@ -14,7 +14,7 @@ public class NetworkExtensionAdapter: ObservableObject {
     var session : NETunnelProviderSession?
     var vpnManager: NETunnelProviderManager?
     
-    var extensionID = "io.netbird.app.NetbirdNetworkExtension"
+    var extensionID = "ryvie.netbird.app.NetbirdNetworkExtension"
     var extensionName = "NetBird Network Extension"
     
     let decoder = PropertyListDecoder()    
@@ -41,12 +41,54 @@ public class NetworkExtensionAdapter: ObservableObject {
     }
     
     func start() async {
+        print("🚀 [NetworkExtensionAdapter] start() called")
         do {
+            print("⚙️ [NetworkExtensionAdapter] Configuring manager...")
             try await configureManager()
-            print("extension configured")
+            print("✅ [NetworkExtensionAdapter] Extension configured successfully")
+            
+            // Observer les changements de status
+            NotificationCenter.default.addObserver(
+                forName: .NEVPNStatusDidChange,
+                object: self.vpnManager?.connection,
+                queue: .main
+            ) { notification in
+                if let connection = notification.object as? NEVPNConnection {
+                    print("🔔 [NetworkExtensionAdapter] VPN Status changed to: \(connection.status.rawValue)")
+                    switch connection.status {
+                    case .invalid:
+                        print("   Status: INVALID")
+                    case .disconnected:
+                        print("   Status: DISCONNECTED")
+                    case .connecting:
+                        print("   Status: CONNECTING")
+                    case .connected:
+                        print("   Status: CONNECTED")
+                    case .reasserting:
+                        print("   Status: REASSERTING")
+                    case .disconnecting:
+                        print("   Status: DISCONNECTING")
+                    @unknown default:
+                        print("   Status: UNKNOWN")
+                    }
+                }
+            }
+            
+            // Observer les erreurs de configuration
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name.NEVPNConfigurationChange,
+                object: self.vpnManager,
+                queue: .main
+            ) { notification in
+                print("🔔 [NetworkExtensionAdapter] VPN Configuration changed")
+            }
+            
+            print("🔐 [NetworkExtensionAdapter] Checking if login is required...")
             await loginIfRequired()
+            print("✅ [NetworkExtensionAdapter] start() completed")
         } catch {
-            print("Failed to start extension: \(error)")
+            print("❌ [NetworkExtensionAdapter] Failed to start extension: \(error)")
+            print("❌ [NetworkExtensionAdapter] Error details: \(error.localizedDescription)")
         }
     }
 
@@ -117,16 +159,41 @@ public class NetworkExtensionAdapter: ObservableObject {
     }
 
     public func startVPNConnection() {
-        print("starting tunnel")
+        print("🚀 [NetworkExtensionAdapter] startVPNConnection() called")
+        
+        guard let session = self.session else {
+            print("❌ [NetworkExtensionAdapter] No session available!")
+            return
+        }
+        
+        print("✅ [NetworkExtensionAdapter] Session available: \(session)")
+        print("🔍 [NetworkExtensionAdapter] Session status: \(session.status)")
+        
         let logLevel = UserDefaults.standard.string(forKey: "logLevel") ?? "INFO"
-        print("Loglevel: " + logLevel)
+        print("📝 [NetworkExtensionAdapter] Log level: \(logLevel)")
         let options: [String: NSObject] = ["logLevel": logLevel as NSObject]
         
         do {
-            try self.session?.startVPNTunnel(options: options)
-            print("VPN Tunnel started.")
+            print("⏳ [NetworkExtensionAdapter] Calling startVPNTunnel...")
+            try session.startVPNTunnel(options: options)
+            print("✅ [NetworkExtensionAdapter] VPN Tunnel start command sent successfully")
+            
+            // Attendre un peu et vérifier le status
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                print("🔍 [NetworkExtensionAdapter] Status after 2s: \(session.status.rawValue)")
+                if session.status == .invalid {
+                    print("❌ [NetworkExtensionAdapter] Status is INVALID - extension not configured properly")
+                } else if session.status == .disconnected {
+                    print("⚠️ [NetworkExtensionAdapter] Status still DISCONNECTED - extension failed to start")
+                } else if session.status == .connecting {
+                    print("⏳ [NetworkExtensionAdapter] Status is CONNECTING - waiting...")
+                } else if session.status == .connected {
+                    print("✅ [NetworkExtensionAdapter] Status is CONNECTED!")
+                }
+            }
         } catch let error {
-            print("Failed to start VPN tunnel: \(error)")
+            print("❌ [NetworkExtensionAdapter] Failed to start VPN tunnel: \(error)")
+            print("❌ [NetworkExtensionAdapter] Error details: \(error.localizedDescription)")
         }
     }
 

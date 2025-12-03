@@ -148,7 +148,7 @@ struct AdvancedView: View {
     
     func shareButtonTapped() {
         let fileManager = FileManager.default
-        guard let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.io.netbird.app") else {
+        guard let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.ryvie.netbird.app") else {
             print("Failed to retrieve the group URL")
             return
         }
@@ -195,7 +195,7 @@ struct AdvancedView: View {
         guard let url = url else { return }
 
         let fileManager = FileManager.default
-        guard let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.io.netbird.app") else {
+        guard let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.ryvie.netbird.app") else {
                 print("Failed to retrieve the group URL")
                 return
             }

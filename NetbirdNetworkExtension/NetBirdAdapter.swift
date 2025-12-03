@@ -64,10 +64,19 @@ public class NetBirdAdapter {
     /// - Parameter packetTunnelProvider: an instance of `NEPacketTunnelProvider`. Internally stored
     ///   as a weak reference.
     init(with tunnelManager: PacketTunnelProviderSettingsManager) {
+        print("🔧 [NetBirdAdapter] Initializing...")
         self.tunnelManager = tunnelManager
         self.networkChangeListener = NetworkChangeListener(with: tunnelManager)
         self.dnsManager = DNSManager(with: tunnelManager)
-        self.client = NetBirdSDKNewClient(Preferences.configFile(), Preferences.stateFile(), Device.getName(), Device.getOsVersion(), Device.getOsName(), self.networkChangeListener, self.dnsManager)!
+        
+        let configFile = Preferences.configFile()
+        let stateFile = Preferences.stateFile()
+        print("📁 [NetBirdAdapter] Config file: \(configFile)")
+        print("📁 [NetBirdAdapter] State file: \(stateFile)")
+        print("📱 [NetBirdAdapter] Device: \(Device.getName())")
+        
+        self.client = NetBirdSDKNewClient(configFile, stateFile, Device.getName(), Device.getOsVersion(), Device.getOsName(), self.networkChangeListener, self.dnsManager)!
+        print("✅ [NetBirdAdapter] Client created")
     }
     
     /// Returns the tunnel device interface name, or nil on error.
@@ -110,7 +119,9 @@ public class NetBirdAdapter {
     }
     
     public func needsLogin() -> Bool {
-        return self.client.isLoginRequired()
+        let loginRequired = self.client.isLoginRequired()
+        print("🔐 [NetBirdAdapter] needsLogin() -> \(loginRequired)")
+        return loginRequired
     }
     
     public func login() -> String {

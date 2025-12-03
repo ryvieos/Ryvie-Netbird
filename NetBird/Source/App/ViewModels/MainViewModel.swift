@@ -85,17 +85,23 @@ class ViewModel: ObservableObject {
     }
     
     func connect()  {
+        print("🚀 [ViewModel] connect() called")
+        print("🔍 [ViewModel] Current extension state: \(self.extensionState)")
         self.connectPressed = true
-        print("Connected pressed set to true")
+        print("✅ [ViewModel] connectPressed set to true")
         DispatchQueue.main.async {
-            print("starting extension")
+            print("🔌 [ViewModel] Starting extension...")
             self.buttonLock = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 self.buttonLock = false
+                print("🔓 [ViewModel] Button lock released")
             }
             Task {
+                print("⏳ [ViewModel] Calling networkExtensionAdapter.start()...")
                 await self.networkExtensionAdapter.start()
-                print("Connected pressed set to false")
+                print("✅ [ViewModel] networkExtensionAdapter.start() completed")
+                print("🔍 [ViewModel] New extension state: \(self.extensionState)")
+                print("✅ [ViewModel] connectPressed set to false")
             }
         }
     }
@@ -203,9 +209,19 @@ class ViewModel: ObservableObject {
     }
     
     func setSetupKey(key: String) throws {
+        print("📝 [ViewModel] setSetupKey() called with key: \(key.prefix(8))...")
+        print("🌐 [ViewModel] Management URL: \(self.managementURL)")
+        print("📁 [ViewModel] Config file: \(Preferences.configFile())")
+        print("📱 [ViewModel] Device name: \(Device.getName())")
+        
         let newAuth = NetBirdSDKNewAuth(Preferences.configFile(), self.managementURL, nil)
+        print("🔐 [ViewModel] NetBirdSDK Auth object created")
+        
         try newAuth?.login(withSetupKeyAndSaveConfig: key, deviceName: Device.getName())
+        print("✅ [ViewModel] login(withSetupKeyAndSaveConfig) completed successfully")
+        
         self.managementURL = ""
+        print("🧹 [ViewModel] Management URL cleared")
     }
     
     func updatePreSharedKey() {
