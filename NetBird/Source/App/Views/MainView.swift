@@ -289,9 +289,7 @@ struct SheetView: View {
                     
                     HStack {
                         if selectedTab == 1 {
-                            Text((viewModel.extensionStateText != "Connected" ? "0" : viewModel.peerViewModel.peerInfo.filter { $0.connStatus == "Connected" }.count.description)
-                                + " of "
-                                + (viewModel.extensionStateText != "Connected" ? "0" : viewModel.peerViewModel.peerInfo.count.description))
+                            Text(viewModel.extensionStateText != "Connected" ? "0" : viewModel.peerViewModel.peerInfo.filter { $0.connStatus == "Connected" }.count.description)
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(Color("TextSecondary"))
                             Text("Peers connected")

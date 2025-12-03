@@ -15,14 +15,14 @@ class Preferences {
 
     static func configFile() -> String {
         let fileManager = FileManager.default
-        let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.io.netbird.app")
+        let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.ryvie.netbird.app")
         let logURL = groupURL?.appendingPathComponent("netbird.cfg")
         return logURL!.relativePath
     }
     
     static func stateFile() -> String {
         let fileManager = FileManager.default
-        let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.io.netbird.app")
+        let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.ryvie.netbird.app")
         let logURL = groupURL?.appendingPathComponent("state.json")
         return logURL!.relativePath
     }

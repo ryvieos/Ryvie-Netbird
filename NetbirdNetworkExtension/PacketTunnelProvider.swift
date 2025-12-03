@@ -8,19 +8,23 @@
 import NetworkExtension
 import Network
 import os
-import Firebase
-import FirebaseCrashlytics
-import FirebaseCore
-import FirebasePerformance
 
 
 class PacketTunnelProvider: NEPacketTunnelProvider {
+    
+    override init() {
+        super.init()
+        NSLog("🎯🎯🎯 [PacketTunnelProvider] INIT CALLED - Extension is loading!")
+        print("🎯🎯🎯 [PacketTunnelProvider] INIT CALLED - Extension is loading!")
+    }
 
     private lazy var tunnelManager: PacketTunnelProviderSettingsManager = {
+        NSLog("🔧 [PacketTunnelProvider] Creating tunnelManager")
         return PacketTunnelProviderSettingsManager(with: self)
     }()
 
     private lazy var adapter: NetBirdAdapter = {
+        NSLog("🔧 [PacketTunnelProvider] Creating adapter")
         return NetBirdAdapter(with: self.tunnelManager)
     }()
 
@@ -29,27 +33,23 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
     var currentNetworkType: NWInterface.InterfaceType?
 
     override func startTunnel(options: [String : NSObject]?, completionHandler: @escaping (Error?) -> Void) {
-        guard let googleServicePlistPath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-              let firebaseOptions = FirebaseOptions(contentsOfFile: googleServicePlistPath) else {
-            let error = NSError(
-                domain: "io.netbird.NetbirdNetworkExtension",
-                code: 1002,
-                userInfo: [NSLocalizedDescriptionKey: "Could not load Firebase configuration."]
-            )
-            completionHandler(error)
-            return
-        }
-
-        FirebaseApp.configure(options: firebaseOptions)
-
+        NSLog("🚀🚀🚀 [PacketTunnelProvider] startTunnel called")
+        print("🚀 [PacketTunnelProvider] startTunnel called")
+        
         if let options = options, let logLevel = options["logLevel"] as? String {
+            print("📝 [PacketTunnelProvider] Log level: \(logLevel)")
             initializeLogging(loglevel: logLevel)
         }
 
         currentNetworkType = nil
         startMonitoringNetworkChanges()
+        print("🔍 [PacketTunnelProvider] Network monitoring started")
 
-        if adapter.needsLogin() {
+        let needsLogin = adapter.needsLogin()
+        print("🔐 [PacketTunnelProvider] needsLogin: \(needsLogin)")
+        
+        if needsLogin {
+            print("❌ [PacketTunnelProvider] Login required, returning error")
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 let error = NSError(
                     domain: "io.netbird.NetbirdNetworkExtension",
@@ -61,6 +61,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
+        print("✅ [PacketTunnelProvider] Starting adapter...")
         adapter.start(completionHandler: completionHandler)
     }
 
@@ -303,7 +304,7 @@ class PacketTunnelProvider: NEPacketTunnelProvider {
 func initializeLogging(loglevel: String) {
     let fileManager = FileManager.default
 
-    let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.io.netbird.app")
+    let groupURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.ryvie.netbird.app")
     let logURL = groupURL?.appendingPathComponent("logfile.log")
 
     var error: NSError?
