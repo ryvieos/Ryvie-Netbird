@@ -13,6 +13,7 @@ struct NewMainView: View {
     @State private var isLoading = true
     @State private var forceOnboarding = false
     @State private var showPeersList = false
+    @State private var showLogoutAlert = false
     
     var body: some View {
         NavigationView {
@@ -55,6 +56,25 @@ struct NewMainView: View {
             .navigationBarHidden(true)
             .onAppear {
                 checkInitialState()
+            }
+            .onChange(of: viewModel.statusDetailsValid) { newValue in
+                print("🔄 [NewMainView] statusDetailsValid changed to: \(newValue)")
+                if newValue && !isLoading {
+                    // Configuration valide détectée, sortir du mode onboarding
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        forceOnboarding = false
+                    }
+                }
+            }
+            .alert(isPresented: $showLogoutAlert) {
+                Alert(
+                    title: Text("Supprimer la connexion à votre Ryvie ?"),
+                    message: Text("Cette action va supprimer la connexion à votre Ryvie sur cet appareil. Vous devrez vous reconnecter depuis chez vous ou directement en rentrant la clé de connexion."),
+                    primaryButton: .destructive(Text("Supprimer la connexion")) {
+                        deleteSetupKey()
+                    },
+                    secondaryButton: .cancel(Text("Annuler"))
+                )
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -162,13 +182,13 @@ struct NewMainView: View {
             
             Spacer()
             
-            // Bouton pour supprimer la setup key
+            // Bouton de logout (suppression de la connexion Ryvie)
             Button(action: {
-                deleteSetupKey()
+                showLogoutAlert = true
             }) {
-                Image(systemName: "trash")
+                Image(systemName: "rectangle.portrait.and.arrow.right")
                     .font(.system(size: 20))
-                    .foregroundColor(.red)
+                    .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.25))
                     .frame(width: 44, height: 44)
             }
         }
@@ -190,7 +210,53 @@ struct NewMainView: View {
                     .foregroundColor(.primary)
             }
             
-            if viewModel.extensionState == .connected {
+            if viewModel.extensionState == .connecting {
+                // Indicateur visuel pendant la connexion
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color(red: 0.36, green: 0.84, blue: 0.95)))
+                        .scaleEffect(1.2)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Connexion au Ryvie en cours...")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color(red: 0.20, green: 0.60, blue: 0.80))
+                        
+                        Text("Cela peut prendre quelques secondes")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(14)
+                .background(Color(red: 0.36, green: 0.84, blue: 0.95).opacity(0.12))
+                .cornerRadius(14)
+                .transition(.opacity.combined(with: .scale))
+            } else if viewModel.extensionState == .disconnecting {
+                // Indicateur visuel pendant la déconnexion
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: Color(red: 0.95, green: 0.70, blue: 0.30)))
+                        .scaleEffect(1.2)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Déconnexion de Ryvie...")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(Color(red: 0.90, green: 0.55, blue: 0.20))
+                        
+                        Text("Merci de patienter quelques instants")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(14)
+                .background(Color(red: 0.95, green: 0.70, blue: 0.30).opacity(0.10))
+                .cornerRadius(14)
+                .transition(.opacity.combined(with: .scale))
+            } else if viewModel.extensionState == .connected {
                 VStack(spacing: 12) {
                     Button(action: {
                         UIPasteboard.general.string = viewModel.fqdn
@@ -260,6 +326,25 @@ struct NewMainView: View {
                 }
                 .padding(.top, 8)
                 .transition(.opacity.combined(with: .scale))
+            } else {
+                // État déconnecté : message informatif
+                VStack(spacing: 8) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "wifi.slash")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.gray)
+                        Text("Ryvie déconnecté")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Text("Appuyez sur le bouton ci‑dessous pour vous connecter à votre réseau Ryvie.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.gray.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 4)
+                .transition(.opacity)
             }
         }
         .padding(24)
@@ -349,7 +434,7 @@ struct NewMainView: View {
                         
                         Text("Setup Key")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         Spacer()
                         
@@ -381,7 +466,7 @@ struct NewMainView: View {
                         
                         Text("About")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         
                         Spacer()
                         
@@ -664,7 +749,7 @@ struct MenuButton: View {
                 
                 Text(title)
                     .font(.system(size: 18))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                 
                 Spacer()
                 
