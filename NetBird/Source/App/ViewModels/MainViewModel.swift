@@ -92,7 +92,7 @@ class ViewModel: ObservableObject {
         DispatchQueue.main.async {
             print("🔌 [ViewModel] Starting extension...")
             self.buttonLock = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.buttonLock = false
                 print("🔓 [ViewModel] Button lock released")
             }
@@ -111,7 +111,7 @@ class ViewModel: ObservableObject {
         DispatchQueue.main.async {
             print("Stopping extension")
             self.buttonLock = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.buttonLock = false
             }
             self.networkExtensionAdapter.stop()
@@ -340,6 +340,95 @@ class ViewModel: ObservableObject {
             print(logContents)
         } catch {
             print("Failed to read the log file: \(error.localizedDescription)")
+        }
+    }
+    
+    // Récupérer la setup key depuis l'API Ryvie locale
+    func fetchSetupKeyFromRyvie() async -> String? {
+        print("🔍 [ViewModel] Tentative de récupération de la setup key depuis Ryvie local...")
+        
+        // Essayer plusieurs URLs dans l'ordre (port 3002, endpoint /api/settings/ryvie-domains)
+        let urls = [
+            "http://ryvie.local:3002/api/settings/ryvie-domains",
+            "http://localhost:3002/api/settings/ryvie-domains",
+            "http://127.0.0.1:3002/api/settings/ryvie-domains"
+        ]
+        
+        for urlString in urls {
+            print("🔗 [ViewModel] Tentative avec: \(urlString)")
+            if let result = await tryFetchFromURL(urlString) {
+                return result
+            }
+        }
+        
+        print("❌ [ViewModel] Aucune URL n'a fonctionné")
+        return nil
+    }
+    
+    private func tryFetchFromURL(_ urlString: String) async -> String? {
+        guard let url = URL(string: urlString) else {
+            print("❌ [ViewModel] URL invalide: \(urlString)")
+            return nil
+        }
+        
+        do {
+            // Créer une configuration avec timeout court
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = 3.0
+            configuration.timeoutIntervalForResource = 3.0
+            let session = URLSession(configuration: configuration)
+            
+            let (data, response) = try await session.data(from: url)
+            
+            // Debug: afficher la réponse brute
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📥 [ViewModel] Réponse brute: \(responseString.prefix(200))")
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ [ViewModel] Réponse HTTP invalide")
+                return nil
+            }
+            
+            print("📊 [ViewModel] Code de statut HTTP: \(httpResponse.statusCode)")
+            
+            guard httpResponse.statusCode == 200 else {
+                print("❌ [ViewModel] Code de statut HTTP non-200: \(httpResponse.statusCode)")
+                return nil
+            }
+            
+            // Tenter de parser le JSON
+            let json = try JSONSerialization.jsonObject(with: data, options: [])
+            
+            guard let dict = json as? [String: Any] else {
+                print("❌ [ViewModel] La réponse n'est pas un dictionnaire JSON")
+                return nil
+            }
+            
+            print("📋 [ViewModel] Clés disponibles dans la réponse: \(dict.keys.joined(separator: ", "))")
+            
+            guard let success = dict["success"] as? Bool, success else {
+                print("❌ [ViewModel] success=false ou absent dans la réponse")
+                return nil
+            }
+            
+            guard let setupKey = dict["setupKey"] as? String else {
+                print("❌ [ViewModel] setupKey absent dans la réponse")
+                return nil
+            }
+            
+            print("✅ [ViewModel] Setup key récupérée avec succès: \(setupKey.prefix(8))...")
+            return setupKey
+            
+        } catch let error as NSError {
+            print("❌ [ViewModel] Erreur lors de la récupération:")
+            print("   - Description: \(error.localizedDescription)")
+            print("   - Domain: \(error.domain)")
+            print("   - Code: \(error.code)")
+            if let underlyingError = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+                print("   - Underlying error: \(underlyingError.localizedDescription)")
+            }
+            return nil
         }
     }
 }

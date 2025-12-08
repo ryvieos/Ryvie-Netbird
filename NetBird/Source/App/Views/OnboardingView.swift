@@ -15,6 +15,11 @@ struct OnboardingView: View {
     @State private var errorMessage = ""
     @State private var animateLogo = false
     @State private var animateContent = false
+    @State private var isFetchingFromRyvie = false
+    @State private var showManualInput = false
+    @State private var ryvieNotFound = false
+    @State private var autoConnecting = false
+    @State private var showSuccessMessage = false
     
     var body: some View {
         ZStack {
@@ -53,81 +58,183 @@ struct OnboardingView: View {
                 
                 Spacer()
                 
-                // Setup Key Input
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Clé de configuration")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    HStack {
-                        Image(systemName: "key.fill")
-                            .foregroundColor(.white.opacity(0.7))
-                            .frame(width: 20)
+                // État de chargement lors de la récupération depuis Ryvie
+                if isFetchingFromRyvie {
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
                         
-                        TextField("", text: $setupKey)
-                            .placeholder(when: setupKey.isEmpty) {
-                                Text("Entrez votre clé")
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
+                        Text("Recherche de Ryvie local...")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+                    .padding(.horizontal, 40)
+                    .transition(.opacity.combined(with: .scale))
+                } else if autoConnecting {
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        
+                        Text("Configuration automatique...")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.9))
+                        
+                        Text("Connexion au réseau Ryvie")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.horizontal, 40)
+                    .transition(.opacity.combined(with: .scale))
+                } else if showSuccessMessage {
+                    VStack(spacing: 20) {
+                        ZStack {
+                            // Cercle de fond animé
+                            Circle()
+                                .fill(Color(red: 0.30, green: 0.85, blue: 0.40).opacity(0.2))
+                                .frame(width: 100, height: 100)
+                                .scaleEffect(showSuccessMessage ? 1.2 : 0.8)
+                                .animation(.easeOut(duration: 0.6).repeatForever(autoreverses: true), value: showSuccessMessage)
+                            
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Color(red: 0.30, green: 0.85, blue: 0.40))
+                                .scaleEffect(showSuccessMessage ? 1.0 : 0.5)
+                                .shadow(color: Color(red: 0.30, green: 0.85, blue: 0.40).opacity(0.5), radius: 10, x: 0, y: 5)
+                        }
+                        
+                        Text("Configuration réussie !")
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(.white)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
+                        
+                        Text("Connexion à Ryvie...")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
                     }
-                    .padding()
-                    .background(Color.white.opacity(0.2))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                    )
-                    
-                    if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
+                    .padding(.horizontal, 40)
+                    .transition(.opacity.combined(with: .scale))
+                } else if ryvieNotFound {
+                    // Message si Ryvie n'est pas trouvé
+                    VStack(spacing: 16) {
                         HStack {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .foregroundColor(.red)
-                            Text("Format de clé invalide")
-                                .font(.system(size: 14))
-                                .foregroundColor(.red)
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.yellow)
+                            Text("Ryvie local non détecté")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Text("Vous pouvez entrer votre clé manuellement")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                        
+                        // Bouton pour réessayer
+                        Button(action: {
+                            Task {
+                                await MainActor.run {
+                                    ryvieNotFound = false
+                                    showManualInput = false
+                                }
+                                await tryFetchSetupKeyFromRyvie()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 14))
+                                Text("Réessayer")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.2))
+                            .cornerRadius(8)
                         }
                     }
+                    .padding(.horizontal, 40)
                 }
-                .padding(.horizontal, 40)
                 
-                // Connect Button
-                Button(action: {
-                    connectWithKey()
-                }) {
-                    HStack(spacing: 12) {
-                        if isConnecting {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.system(size: 24))
+                // Setup Key Input (toujours visible ou après échec de récupération)
+                if showManualInput || ryvieNotFound {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Clé de configuration")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        HStack {
+                            Image(systemName: "key.fill")
+                                .foregroundColor(.white.opacity(0.7))
+                                .frame(width: 20)
+                            
+                            TextField("", text: $setupKey)
+                                .placeholder(when: setupKey.isEmpty) {
+                                    Text("Entrez votre clé")
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                                .foregroundColor(.white)
+                                .autocapitalization(.none)
+                                .disableAutocorrection(true)
                         }
-                        Text(isConnecting ? "Connexion..." : "Se connecter")
-                            .font(.system(size: 18, weight: .bold))
-                            .tracking(0.5)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color(red: 0.30, green: 0.85, blue: 0.40),
-                                Color(red: 0.20, green: 0.70, blue: 0.30)
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
+                        .padding()
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
                         )
-                    )
-                    .cornerRadius(14)
-                    .shadow(color: Color(red: 0.30, green: 0.85, blue: 0.40).opacity(0.5), radius: 12, x: 0, y: 6)
+                        
+                        if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
+                            HStack {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                Text("Format de clé invalide")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 40)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    
+                    // Connect Button
+                    Button(action: {
+                        connectWithKey()
+                    }) {
+                        HStack(spacing: 12) {
+                            if isConnecting {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.system(size: 24))
+                            }
+                            Text(isConnecting ? "Connexion..." : "Se connecter")
+                                .font(.system(size: 18, weight: .bold))
+                                .tracking(0.5)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.30, green: 0.85, blue: 0.40),
+                                    Color(red: 0.20, green: 0.70, blue: 0.30)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(14)
+                        .shadow(color: Color(red: 0.30, green: 0.85, blue: 0.40).opacity(0.5), radius: 12, x: 0, y: 6)
+                    }
+                    .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isConnecting)
+                    .opacity((setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isConnecting) ? 0.5 : 1.0)
+                    .padding(.horizontal, 40)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isConnecting)
-                .opacity((setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isConnecting) ? 0.5 : 1.0)
-                .padding(.horizontal, 40)
                 
                 Spacer()
                 
@@ -187,40 +294,133 @@ struct OnboardingView: View {
             withAnimation(.easeOut(duration: 0.8).delay(0.3)) {
                 animateContent = true
             }
+            
+            // Tenter de récupérer automatiquement la setup key depuis Ryvie
+            Task {
+                await tryFetchSetupKeyFromRyvie()
+            }
+        }
+    }
+    
+    private func tryFetchSetupKeyFromRyvie() async {
+        print("🔍 [OnboardingView] Tentative de récupération automatique de la setup key...")
+        
+        // Afficher l'état de chargement
+        await MainActor.run {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isFetchingFromRyvie = true
+            }
+        }
+        
+        // Attendre un peu pour l'animation
+        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 secondes
+        
+        // Tenter de récupérer la setup key
+        if let fetchedKey = await viewModel.fetchSetupKeyFromRyvie() {
+            print("✅ [OnboardingView] Setup key récupérée automatiquement!")
+            
+            // Transition vers l'état de connexion automatique
+            await MainActor.run {
+                setupKey = fetchedKey
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isFetchingFromRyvie = false
+                    autoConnecting = true
+                }
+            }
+            
+            // Attendre un peu pour l'animation
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 secondes
+            
+            // Connecter automatiquement avec la clé récupérée
+            await connectWithKeyAsync()
+            
+        } else {
+            print("⚠️ [OnboardingView] Impossible de récupérer la setup key, passage en mode manuel")
+            
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isFetchingFromRyvie = false
+                    ryvieNotFound = true
+                    showManualInput = true
+                }
+            }
+        }
+    }
+    
+    private func connectWithKeyAsync() async {
+        print("🔌 [OnboardingView] Connexion automatique en cours...")
+        
+        await MainActor.run {
+            isConnecting = true
+        }
+        
+        // Attendre un peu pour l'animation
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 secondes
+        
+        let serverURL = "https://netbird.ryvie.fr"
+        let ssoSupported = viewModel.updateManagementURL(url: serverURL)
+        
+        if ssoSupported == nil {
+            await MainActor.run {
+                errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
+                showError = true
+                isConnecting = false
+                autoConnecting = false
+            }
+            return
+        }
+        
+        // Attendre un peu
+        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 secondes
+        
+        do {
+            try viewModel.setSetupKey(key: setupKey)
+            
+            print("✅ [OnboardingView] Setup key saved successfully")
+            
+            // Afficher le message de succès
+            await MainActor.run {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                    autoConnecting = false
+                    showSuccessMessage = true
+                }
+                isConnecting = false
+            }
+            
+            // Attendre 1 seconde pour afficher le message de succès
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            
+            // Lancer la connexion VPN automatiquement
+            print("🚀 [OnboardingView] Lancement de la connexion VPN automatique...")
+            await MainActor.run {
+                viewModel.connect()
+            }
+            
+            // Attendre encore 0.5 secondes avant de fermer
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            
+            // La vue devrait se fermer automatiquement car statusDetailsValid devient true
+            print("✅ [OnboardingView] Configuration terminée, transition vers l'écran principal")
+            
+        } catch {
+            await MainActor.run {
+                errorMessage = "Clé de configuration invalide. Veuillez vérifier et réessayer."
+                showError = true
+                isConnecting = false
+                autoConnecting = false
+                
+                // Revenir au mode manuel
+                withAnimation {
+                    ryvieNotFound = true
+                    showManualInput = true
+                }
+            }
         }
     }
     
     private func connectWithKey() {
-        isConnecting = true
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let serverURL = "https://netbird.ryvie.fr"
-            let ssoSupported = viewModel.updateManagementURL(url: serverURL)
-            
-            if ssoSupported == nil {
-                errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
-                showError = true
-                isConnecting = false
-                return
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                do {
-                    try viewModel.setSetupKey(key: setupKey)
-                    
-                    // Clé enregistrée avec succès - ne pas se connecter automatiquement
-                    // L'utilisateur devra cliquer sur le bouton de connexion
-                    isConnecting = false
-                    setupKey = ""
-                    
-                    print("✅ [OnboardingView] Setup key saved successfully")
-                    
-                } catch {
-                    errorMessage = "Clé de configuration invalide. Veuillez vérifier et réessayer."
-                    showError = true
-                    isConnecting = false
-                }
-            }
+        Task {
+            await connectWithKeyAsync()
         }
     }
 }
