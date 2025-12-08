@@ -1,8 +1,8 @@
 //
 //  AboutView.swift
-//  NetBirdiOS
+//  Ryvie Connect
 //
-//  Created by Pascal Fischer on 01.08.23.
+//  Created by Pascal Fischer on 12.10.23.
 //
 
 import SwiftUI

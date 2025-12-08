@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "50A891162A792A15007C48FC"
-               BuildableName = "NetBird.app"
-               BlueprintName = "NetBird"
+               BuildableName = "Ryvie Connect.app"
+               BlueprintName = "Ryvie Connect"
                ReferencedContainer = "container:NetBird.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,8 +44,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "50A891162A792A15007C48FC"
-            BuildableName = "NetBird.app"
-            BlueprintName = "NetBird"
+            BuildableName = "Ryvie Connect.app"
+            BlueprintName = "Ryvie Connect"
             ReferencedContainer = "container:NetBird.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -67,8 +67,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "50A891162A792A15007C48FC"
-            BuildableName = "NetBird.app"
-            BlueprintName = "NetBird"
+            BuildableName = "Ryvie Connect.app"
+            BlueprintName = "Ryvie Connect"
             ReferencedContainer = "container:NetBird.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
