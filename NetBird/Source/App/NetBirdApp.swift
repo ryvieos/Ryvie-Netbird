@@ -1,5 +1,6 @@
 //
-//  NetBirdiOSApp.swift
+//  RyvieConnectApp.swift
+//  Ryvie Connect
 //
 //  Created by Pascal Fischer on 01.08.23.
 //
@@ -7,7 +8,7 @@
 import SwiftUI
 
 @main
-struct NetBirdApp: App {
+struct RyvieConnectApp: App {
     @StateObject var viewModel = ViewModel()
     @Environment(\.scenePhase) var scenePhase
     

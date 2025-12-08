@@ -63,7 +63,6 @@
 		509CCD6C2BE90D0E00B7C2D8 /* PeerTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 509CCD6B2BE90D0E00B7C2D8 /* PeerTabView.swift */; };
 		509CCD6E2BE90D2100B7C2D8 /* RouteTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 509CCD6D2BE90D2100B7C2D8 /* RouteTabView.swift */; };
 		50A8911B2A792A15007C48FC /* NetBirdApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A8911A2A792A15007C48FC /* NetBirdApp.swift */; };
-		50A8911D2A792A15007C48FC /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A8911C2A792A15007C48FC /* MainView.swift */; };
 		50A8911F2A792A16007C48FC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50A8911E2A792A16007C48FC /* Assets.xcassets */; };
 		50BB17412C30239400518BCA /* RouteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50BB17402C30239400518BCA /* RouteCard.swift */; };
 		50C5D30F2BDD96CF003159BE /* RoutesSelectionDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C5D30E2BDD96CF003159BE /* RoutesSelectionDetails.swift */; };
@@ -185,7 +184,6 @@
 		509CCD6D2BE90D2100B7C2D8 /* RouteTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteTabView.swift; sourceTree = "<group>"; };
 		50A891172A792A15007C48FC /* NetBird.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetBird.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		50A8911A2A792A15007C48FC /* NetBirdApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetBirdApp.swift; sourceTree = "<group>"; };
-		50A8911C2A792A15007C48FC /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		50A8911E2A792A16007C48FC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		50BB17402C30239400518BCA /* RouteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteCard.swift; sourceTree = "<group>"; };
 		50C5D30E2BDD96CF003159BE /* RoutesSelectionDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutesSelectionDetails.swift; sourceTree = "<group>"; };
@@ -194,7 +192,6 @@
 		50CD81612AD0595E00CF830B /* DNSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DNSManager.swift; sourceTree = "<group>"; };
 		50CD81A62AD5504B00CF830B /* StatusDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusDetails.swift; sourceTree = "<group>"; };
 		50CD81AF2AD5B94D00CF830B /* PeerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeerCard.swift; sourceTree = "<group>"; };
-		50CD84352AD82F9400CF830B /* ServerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerView.swift; sourceTree = "<group>"; };
 		50D402932BD9143900D4AC5B /* NetBirdSDK.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = NetBirdSDK.xcframework; path = NetBird/NetBirdSDK.xcframework; sourceTree = "<group>"; };
 		50D402962BD9B89300D4AC5B /* PeerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeerViewModel.swift; sourceTree = "<group>"; };
 		50E608022A7950CB00BAF09B /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
@@ -345,12 +342,10 @@
 			isa = PBXGroup;
 			children = (
 				50E608092A79557A00BAF09B /* Components */,
-				50A8911C2A792A15007C48FC /* MainView.swift */,
 				50NEW0012C4F8A1200BAF09B /* NewMainView.swift */,
 				50NEW0022C4F8A1200BAF09B /* OnboardingView.swift */,
 				50E608232A79966600BAF09B /* AboutView.swift */,
 				50E608252A79968500BAF09B /* AdvancedView.swift */,
-				50CD84352AD82F9400CF830B /* ServerView.swift */,
 				50E608272C4F8A1200BAF09B /* SetupKeyView.swift */,
 				509CCD6B2BE90D0E00B7C2D8 /* PeerTabView.swift */,
 				509CCD6D2BE90D2100B7C2D8 /* RouteTabView.swift */,
@@ -443,11 +438,11 @@
 			dependencies = (
 				50245A5B2A80431C0034792B /* PBXTargetDependency */,
 			);
-			name = NetBird;
+			name = "Ryvie Connect";
 			packageProductDependencies = (
 				506331FD2AF53CFF00BC8F0E /* Lottie */,
 			);
-			productName = NetBirdiOS;
+			productName = "Ryvie Connect";
 			productReference = 50A891172A792A15007C48FC /* NetBird.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -487,7 +482,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				50A891162A792A15007C48FC /* NetBird */,
+				50A891162A792A15007C48FC /* Ryvie Connect */,
 				50245A512A80431B0034792B /* NetbirdNetworkExtension */,
 			);
 		};
@@ -554,9 +549,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50CD84362AD82F9400CF830B /* ServerView.swift in Sources */,
 				50C5D30F2BDD96CF003159BE /* RoutesSelectionDetails.swift in Sources */,
-				50A8911D2A792A15007C48FC /* MainView.swift in Sources */,
 				50NEW0042C4F8A1200BAF09B /* NewMainView.swift in Sources */,
 				50NEW0052C4F8A1200BAF09B /* OnboardingView.swift in Sources */,
 				50NEW0062C4F8A1200BAF09B /* ModernConnectButton.swift in Sources */,

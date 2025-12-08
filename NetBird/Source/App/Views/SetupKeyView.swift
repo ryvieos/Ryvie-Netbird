@@ -1,6 +1,6 @@
 //
 //  SetupKeyView.swift
-//  NetBird
+//  Ryvie Connect
 //
 //  Created by Cascade on 03.12.24.
 //

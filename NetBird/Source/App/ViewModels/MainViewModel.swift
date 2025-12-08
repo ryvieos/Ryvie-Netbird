@@ -1,6 +1,6 @@
 //
 //  MainViewModel.swift
-//  NetBirdiOS
+//  Ryvie Connect
 //
 //  Created by Pascal Fischer on 01.08.23.
 //
