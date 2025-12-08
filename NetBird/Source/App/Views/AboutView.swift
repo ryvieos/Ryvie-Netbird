@@ -35,26 +35,14 @@ struct AboutView: View {
                 }
                 .padding(.bottom, UIScreen.main.bounds.height * 0.04)
                 
-                if let licenseURL = URL(string: "https://netbird.io/terms") {
-                    Link("License agreement", destination: licenseURL)
-                        .font(.system(size: 18, weight: .medium))
-                        .padding(.bottom, UIScreen.main.bounds.height * 0.04)
-                }
-                
-                if let privacyURL = URL(string: "https://netbird.io/privacy") {
-                    Link("Privacy policy", destination: privacyURL)
-                        .font(.system(size: 18, weight: .medium))
-                }
+                Text("Ryvie Connect")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(Color("TextPrimary"))
+                    .padding(.bottom, UIScreen.main.bounds.height * 0.02)
                 
                 Spacer()
                 
-                TransparentGradientButton(text: "Join Beta Program") {
-                    viewModel.showBetaProgramAlert.toggle()
-                }
-                .padding(.horizontal, UIScreen.main.bounds.width * 0.20)
-                .padding(.bottom, 50)
-                
-                Text("© 2023 NetBird all rights reserved")
+                Text("© 2024 Ryvie. All rights reserved.")
                     .foregroundColor(.white)
                     .padding(.bottom, UIScreen.main.bounds.height * 0.01)
             }

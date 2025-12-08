@@ -157,7 +157,7 @@ struct AdvancedView: View {
 
         do {
             let logData = try String(contentsOf: logURL, encoding: .utf8)
-            let fileName = "netbird-log.txt"
+            let fileName = "ryvie-connect-log.txt"
             guard let filePath = getDocumentsDirectory()?.appendingPathComponent(fileName) else {
                 print("Failed to get file path")
                 return
@@ -204,7 +204,7 @@ struct AdvancedView: View {
 
             do {
                 let logData = try String(contentsOf: logURL, encoding: .utf8)
-                let fileURL = url.appendingPathComponent("netbird.log")
+                let fileURL = url.appendingPathComponent("ryvie-connect.log")
                 do {
                     try logData.write(to: fileURL, atomically: true, encoding: .utf8)
                     print("Log file saved successfully.")

@@ -61,26 +61,12 @@ struct SideMenu: View {
                         label: "Setup Key",
                         destination: SetupKeyView()
                     )
-                    
-                    menuNavigationLink(
-                        imageName: "menu-advance",
-                        label: "Advanced",
-                        destination: AdvancedView()
-                    )
 
                     menuNavigationLink(
                         imageName: "menu-about",
                         label: "About",
                         destination: AboutView()
                     )
-
-                    menuLink(
-                        imageName: "menu-faq",
-                        label: "Docs",
-                        url: URL(string: "https://docs.netbird.io")
-                    )
-
-                    changeServerButton()
                 }
                 .padding(.leading, UIScreen.main.bounds.width * 0.10)
 

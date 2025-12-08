@@ -424,7 +424,7 @@ struct ChangeServerAlert: View {
             Text("Change server")
                 .font(.title)
                 .foregroundColor(Color("TextAlert"))
-            Text("Changing server will erase the local config and disconnect this device from the current NetBird account.")
+            Text("Changing server will erase the local config and disconnect this device from the current account.")
                 .foregroundColor(Color("TextAlert"))
                 .multilineTextAlignment(.center)
             SolidButton(text: "Confirm") {

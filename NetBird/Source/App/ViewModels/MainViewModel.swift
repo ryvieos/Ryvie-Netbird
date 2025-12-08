@@ -150,7 +150,12 @@ class ViewModel: ObservableObject {
                 }
             }
             
-            self.statusDetailsValid = true
+            // Vérifier si on a une configuration valide
+            if self.hasValidConfiguration() {
+                self.statusDetailsValid = true
+            } else {
+                self.statusDetailsValid = false
+            }
             
             let sortedPeerInfo = details.peerInfo.sorted(by: { a, b in
                 a.ip < b.ip
@@ -204,8 +209,25 @@ class ViewModel: ObservableObject {
     func clearDetails() {
         self.ip = ""
         self.fqdn = ""
+        self.statusDetailsValid = false
         defaults.removeObject(forKey: "ip")
         defaults.removeObject(forKey: "fqdn")
+        
+        // Marquer la configuration comme invalide
+        defaults.set(false, forKey: "hasValidConfig")
+        defaults.synchronize()
+        
+        // Supprimer aussi le fichier de configuration
+        let configFile = Preferences.configFile()
+        if FileManager.default.fileExists(atPath: configFile) {
+            try? FileManager.default.removeItem(atPath: configFile)
+            print("🗑️ [ViewModel] Config file deleted: \(configFile)")
+        }
+    }
+    
+    func hasValidConfiguration() -> Bool {
+        // Vérifier si on a marqué la config comme valide
+        return defaults.bool(forKey: "hasValidConfig")
     }
     
     func setSetupKey(key: String) throws {
@@ -219,6 +241,11 @@ class ViewModel: ObservableObject {
         
         try newAuth?.login(withSetupKeyAndSaveConfig: key, deviceName: Device.getName())
         print("✅ [ViewModel] login(withSetupKeyAndSaveConfig) completed successfully")
+        
+        // Marquer la configuration comme valide
+        defaults.set(true, forKey: "hasValidConfig")
+        defaults.synchronize()
+        print("✅ [ViewModel] Configuration marked as valid")
         
         self.managementURL = ""
         print("🧹 [ViewModel] Management URL cleared")

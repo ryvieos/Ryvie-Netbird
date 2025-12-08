@@ -15,6 +15,7 @@ struct SetupKeyView: View {
     @State private var isVerifying = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @State private var hasExistingKey = false
     
     var body: some View {
         ZStack {
@@ -23,41 +24,54 @@ struct SetupKeyView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Register with Setup Key")
+                    Text("Setup Key Management")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color("TextPrimary"))
                         .padding(.top, UIScreen.main.bounds.height * 0.04)
                     
-                    Text("Enter your setup key to register this device with your NetBird network.")
-                        .multilineTextAlignment(.leading)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(Color("TextSecondary"))
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    Text("Setup Key")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(Color("TextPrimary"))
+                    if hasExistingKey {
+                        Text("A setup key is currently configured. You can remove it to enter a new one.")
+                            .multilineTextAlignment(.leading)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(Color("TextSecondary"))
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        SolidButton(text: "Remove Setup Key") {
+                            removeSetupKey()
+                        }
                         .padding(.top, 10)
-                    
-                    CustomTextField(
-                        placeholder: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-                        text: $setupKey,
-                        secure: .constant(false)
-                    )
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    
-                    if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
-                        Text("Invalid setup key format")
-                            .foregroundColor(.red)
-                            .font(.system(size: 14))
+                    } else {
+                        Text("Enter your setup key to connect to your Ryvie network.")
+                            .multilineTextAlignment(.leading)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(Color("TextSecondary"))
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        Text("Setup Key")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(Color("TextPrimary"))
+                            .padding(.top, 10)
+                        
+                        CustomTextField(
+                            placeholder: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                            text: $setupKey,
+                            secure: .constant(false)
+                        )
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        
+                        if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
+                            Text("Invalid setup key format")
+                                .foregroundColor(.red)
+                                .font(.system(size: 14))
+                        }
+                        
+                        SolidButton(text: isVerifying ? "Saving..." : "Save Key") {
+                            saveSetupKey()
+                        }
+                        .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isVerifying)
+                        .padding(.top, 10)
                     }
-                    
-                    SolidButton(text: isVerifying ? "Registering..." : "Register Device") {
-                        registerWithSetupKey()
-                    }
-                    .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isVerifying)
-                    .padding(.top, 10)
                     
                     Spacer()
                 }
@@ -88,15 +102,41 @@ struct SetupKeyView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+        .onAppear {
+            checkForExistingKey()
+        }
     }
     
-    private func registerWithSetupKey() {
+    private func checkForExistingKey() {
+        // Vérifier si une configuration existe déjà
+        // Si statusDetailsValid est true, cela signifie qu'une clé est configurée
+        hasExistingKey = viewModel.statusDetailsValid
+    }
+    
+    private func removeSetupKey() {
+        print("🗑️ [SetupKeyView] Removing setup key")
+        
+        // Déconnecter d'abord si connecté
+        if viewModel.extensionState != .disconnected {
+            viewModel.close()
+        }
+        
+        // Effacer la configuration
+        viewModel.clearDetails()
+        
+        // Mettre à jour l'état
+        hasExistingKey = false
+        
+        print("✅ [SetupKeyView] Setup key removed successfully")
+    }
+    
+    private func saveSetupKey() {
         guard !setupKey.isEmpty && viewModel.isValidSetupKey(setupKey) else {
             print("❌ [SetupKeyView] Invalid setup key format")
             return
         }
         
-        print("🔑 [SetupKeyView] Starting registration with setup key")
+        print("🔑 [SetupKeyView] Saving setup key")
         isVerifying = true
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -107,67 +147,33 @@ struct SetupKeyView: View {
             
             if ssoSupported == nil {
                 print("❌ [SetupKeyView] Failed to connect to server")
-                errorMessage = "Failed to connect to server. Please check your internet connection."
+                errorMessage = "Impossible de se connecter au serveur. Vérifiez votre connexion internet."
                 showErrorAlert = true
                 isVerifying = false
                 return
             }
             
-            print("✅ [SetupKeyView] Server configured successfully, SSO supported: \(ssoSupported ?? false)")
+            print("✅ [SetupKeyView] Server configured successfully")
             
-            // Enregistrer avec la setup key
+            // Enregistrer la setup key
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 do {
-                    print("📝 [SetupKeyView] Calling setSetupKey...")
+                    print("📝 [SetupKeyView] Saving setup key...")
                     try viewModel.setSetupKey(key: setupKey)
-                    print("✅ [SetupKeyView] Device registered successfully!")
+                    print("✅ [SetupKeyView] Setup key saved successfully!")
                     
                     // Succès !
                     setupKey = ""
                     isVerifying = false
+                    hasExistingKey = true
                     
-                    // Fermer le menu latéral et retourner à l'écran principal
-                    print("🔙 [SetupKeyView] Closing menu and returning to main screen")
+                    // Fermer le menu
+                    print("🔙 [SetupKeyView] Closing menu")
                     presentationMode.wrappedValue.dismiss()
-                    viewModel.presentSideDrawer = false
-                    
-                    // Attendre que la configuration soit bien enregistrée
-                    print("⏳ [SetupKeyView] Waiting 1 second for configuration to be saved...")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        print("🔍 [SetupKeyView] Current extension state: \(viewModel.extensionState)")
-                        
-                        // Déconnecter si déjà connecté
-                        if viewModel.extensionState != .disconnected {
-                            print("🔌 [SetupKeyView] Extension is connected, disconnecting first...")
-                            viewModel.close()
-                            
-                            // Attendre que la déconnexion soit terminée (3 secondes)
-                            print("⏳ [SetupKeyView] Waiting 3 seconds for disconnection...")
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                print("🔍 [SetupKeyView] Checking extension state after disconnect...")
-                                viewModel.checkExtensionState()
-                                
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                    print("🚀 [SetupKeyView] Attempting to connect...")
-                                    viewModel.connect()
-                                    print("✅ [SetupKeyView] Connect() called successfully")
-                                }
-                            }
-                        } else {
-                            print("🔍 [SetupKeyView] Extension is disconnected, checking state...")
-                            viewModel.checkExtensionState()
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                print("🚀 [SetupKeyView] Attempting to connect...")
-                                viewModel.connect()
-                                print("✅ [SetupKeyView] Connect() called successfully")
-                            }
-                        }
-                    }
                     
                 } catch {
-                    print("❌ [SetupKeyView] Registration failed: \(error.localizedDescription)")
-                    errorMessage = "Failed to register with setup key. Please verify your key is correct and try again."
+                    print("❌ [SetupKeyView] Failed to save setup key: \(error.localizedDescription)")
+                    errorMessage = "Impossible d'enregistrer la clé. Vérifiez qu'elle est correcte."
                     showErrorAlert = true
                     isVerifying = false
                 }
