@@ -13,7 +13,7 @@ struct NetBirdApp: App {
     
     var body: some Scene {
         WindowGroup {
-            MainView()
+            NewMainView()
                 .environmentObject(viewModel)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) {_ in
                     print("App is active!")

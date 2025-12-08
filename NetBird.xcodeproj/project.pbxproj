@@ -87,6 +87,9 @@
 		50E608242A79966600BAF09B /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E608232A79966600BAF09B /* AboutView.swift */; };
 		50E608262A79968500BAF09B /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E608252A79968500BAF09B /* AdvancedView.swift */; };
 		50E608282C4F8A1200BAF09B /* SetupKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E608272C4F8A1200BAF09B /* SetupKeyView.swift */; };
+		50NEW0042C4F8A1200BAF09B /* NewMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50NEW0012C4F8A1200BAF09B /* NewMainView.swift */; };
+		50NEW0052C4F8A1200BAF09B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50NEW0022C4F8A1200BAF09B /* OnboardingView.swift */; };
+		50NEW0062C4F8A1200BAF09B /* ModernConnectButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50NEW0032C4F8A1200BAF09B /* ModernConnectButton.swift */; };
 		84F325A02EE08E4900DC7B76 /* NetBirdSDK.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50D402932BD9143900D4AC5B /* NetBirdSDK.xcframework */; };
 		84F325A12EE08E4900DC7B76 /* NetBirdSDK.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 50D402932BD9143900D4AC5B /* NetBirdSDK.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		84F325A32EE08E4B00DC7B76 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50245A532A80431B0034792B /* NetworkExtension.framework */; };
@@ -200,6 +203,9 @@
 		50E608232A79966600BAF09B /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		50E608252A79968500BAF09B /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
 		50E608272C4F8A1200BAF09B /* SetupKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupKeyView.swift; sourceTree = "<group>"; };
+		50NEW0012C4F8A1200BAF09B /* NewMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMainView.swift; sourceTree = "<group>"; };
+		50NEW0022C4F8A1200BAF09B /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		50NEW0032C4F8A1200BAF09B /* ModernConnectButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernConnectButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -340,6 +346,8 @@
 			children = (
 				50E608092A79557A00BAF09B /* Components */,
 				50A8911C2A792A15007C48FC /* MainView.swift */,
+				50NEW0012C4F8A1200BAF09B /* NewMainView.swift */,
+				50NEW0022C4F8A1200BAF09B /* OnboardingView.swift */,
 				50E608232A79966600BAF09B /* AboutView.swift */,
 				50E608252A79968500BAF09B /* AdvancedView.swift */,
 				50CD84352AD82F9400CF830B /* ServerView.swift */,
@@ -382,6 +390,7 @@
 				509CCD672BE8FFBF00B7C2D8 /* TabBarButton.swift */,
 				50BB17402C30239400518BCA /* RouteCard.swift */,
 				505344B82C3EFE4C00223065 /* TransparentGradientButton.swift */,
+				50NEW0032C4F8A1200BAF09B /* ModernConnectButton.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -548,6 +557,9 @@
 				50CD84362AD82F9400CF830B /* ServerView.swift in Sources */,
 				50C5D30F2BDD96CF003159BE /* RoutesSelectionDetails.swift in Sources */,
 				50A8911D2A792A15007C48FC /* MainView.swift in Sources */,
+				50NEW0042C4F8A1200BAF09B /* NewMainView.swift in Sources */,
+				50NEW0052C4F8A1200BAF09B /* OnboardingView.swift in Sources */,
+				50NEW0062C4F8A1200BAF09B /* ModernConnectButton.swift in Sources */,
 				50CD814F2AD0355000CF830B /* PacketTunnelProviderSettingsManager.swift in Sources */,
 				50C78AEA2A82C858006E898D /* Device.swift in Sources */,
 				509CCD6A2BE908C000B7C2D8 /* RoutesViewModel.swift in Sources */,
@@ -787,7 +799,7 @@
 				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/**";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NetBird/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NetBird;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ryvie Connect";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -840,7 +852,7 @@
 				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/**";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NetBird/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NetBird;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ryvie Connect";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
