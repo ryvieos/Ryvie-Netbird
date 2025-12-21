@@ -10,6 +10,7 @@ import SwiftUI
 struct ModernConnectButton: View {
     @Binding var isConnected: Bool
     @Binding var isConnecting: Bool
+    @Binding var isDisconnecting: Bool
     let action: () -> Void
     
     @State private var isPressed = false
@@ -29,7 +30,7 @@ struct ModernConnectButton: View {
         }) {
             ZStack {
                 // Pulse effect for connected state
-                if isConnected && !isConnecting {
+                if isConnected && !isConnecting && !isDisconnecting {
                     Circle()
                         .fill(
                             LinearGradient(
@@ -61,8 +62,8 @@ struct ModernConnectButton: View {
                     .shadow(color: shadowColor, radius: isPressed ? 10 : 25, x: 0, y: isPressed ? 5 : 15)
                     .scaleEffect(isPressed ? 0.95 : 1.0)
                 
-                // Animated ring for connecting state
-                if isConnecting {
+                // Animated ring for connecting or disconnecting state
+                if isConnecting || isDisconnecting {
                     Circle()
                         .stroke(Color.white.opacity(0.3), lineWidth: 3)
                         .frame(width: 160, height: 160)
@@ -96,13 +97,13 @@ struct ModernConnectButton: View {
                     )
                 
                 // Icon or animation
-                if isConnecting {
+                if isConnecting || isDisconnecting {
                     VStack(spacing: 12) {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .scaleEffect(1.5)
                         
-                        Text("Connexion...")
+                        Text(isDisconnecting ? "Déconnexion..." : "Connexion...")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.9))
                     }
@@ -123,7 +124,7 @@ struct ModernConnectButton: View {
                 }
             }
         }
-        .disabled(isConnecting)
+        .disabled(isConnecting || isDisconnecting)
         .onAppear {
             if isConnected {
                 pulseAnimation = true
@@ -135,7 +136,7 @@ struct ModernConnectButton: View {
     }
     
     private var gradientColors: [Color] {
-        if isConnecting {
+        if isConnecting || isDisconnecting {
             return [
                 Color(red: 0.95, green: 0.70, blue: 0.30),
                 Color(red: 0.95, green: 0.50, blue: 0.20)
@@ -168,6 +169,8 @@ struct ModernConnectButton: View {
     private var statusText: String {
         if isConnecting {
             return "Connexion..."
+        } else if isDisconnecting {
+            return "Déconnexion..."
         } else if isConnected {
             return "Connecté"
         } else {
@@ -181,18 +184,21 @@ struct ModernConnectButton: View {
         ModernConnectButton(
             isConnected: .constant(false),
             isConnecting: .constant(false),
+            isDisconnecting: .constant(false),
             action: {}
         )
         
         ModernConnectButton(
             isConnected: .constant(false),
             isConnecting: .constant(true),
+            isDisconnecting: .constant(false),
             action: {}
         )
         
         ModernConnectButton(
             isConnected: .constant(true),
             isConnecting: .constant(false),
+            isDisconnecting: .constant(false),
             action: {}
         )
     }

@@ -13,7 +13,7 @@ struct NewMainView: View {
     @State private var isLoading = true
     @State private var forceOnboarding = false
     @State private var showPeersList = false
-    @State private var showLogoutAlert = false
+    @State private var showNewConnectionAlert = false
     
     var body: some View {
         NavigationView {
@@ -66,12 +66,19 @@ struct NewMainView: View {
                     }
                 }
             }
-            .alert(isPresented: $showLogoutAlert) {
+            .alert(isPresented: $viewModel.showConnectionError) {
                 Alert(
-                    title: Text("Supprimer la connexion à votre Ryvie ?"),
-                    message: Text("Cette action va supprimer la connexion à votre Ryvie sur cet appareil. Vous devrez vous reconnecter depuis chez vous ou directement en rentrant la clé de connexion."),
-                    primaryButton: .destructive(Text("Supprimer la connexion")) {
-                        deleteSetupKey()
+                    title: Text("⚠️ Erreur de connexion"),
+                    message: Text(viewModel.connectionErrorMessage),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+            .alert(isPresented: $showNewConnectionAlert) {
+                Alert(
+                    title: Text("⚠️ Nouvelle connexion"),
+                    message: Text("Cette action va supprimer votre connexion actuelle. Pour vous reconnecter, vous devrez :\n\n• Être sur le même réseau que votre Ryvie\n• Ou avoir votre clé de connexion"),
+                    primaryButton: .destructive(Text("Continuer")) {
+                        performNewConnection()
                     },
                     secondaryButton: .cancel(Text("Annuler"))
                 )
@@ -127,7 +134,8 @@ struct NewMainView: View {
                 // Connect Button
                 ModernConnectButton(
                     isConnected: .constant(viewModel.extensionState == .connected),
-                    isConnecting: .constant(viewModel.extensionState == .connecting),
+                    isConnecting: .constant(viewModel.isActuallyConnecting || viewModel.extensionState == .connecting),
+                    isDisconnecting: .constant(viewModel.isActuallyDisconnecting || viewModel.extensionState == .disconnecting),
                     action: toggleConnection
                 )
                 .padding(.bottom, 40)
@@ -182,15 +190,9 @@ struct NewMainView: View {
             
             Spacer()
             
-            // Bouton de logout (suppression de la connexion Ryvie)
-            Button(action: {
-                showLogoutAlert = true
-            }) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 20))
-                    .foregroundColor(Color(red: 0.95, green: 0.55, blue: 0.25))
-                    .frame(width: 44, height: 44)
-            }
+            // Espace vide pour centrer le logo
+            Color.clear
+                .frame(width: 44, height: 44)
         }
         .padding(.horizontal, 20)
         .padding(.top, 50)
@@ -210,7 +212,7 @@ struct NewMainView: View {
                     .foregroundColor(.primary)
             }
             
-            if viewModel.extensionState == .connecting {
+            if viewModel.isActuallyConnecting || viewModel.extensionState == .connecting {
                 // Indicateur visuel pendant la connexion
                 HStack(spacing: 12) {
                     ProgressView()
@@ -233,7 +235,7 @@ struct NewMainView: View {
                 .background(Color(red: 0.36, green: 0.84, blue: 0.95).opacity(0.12))
                 .cornerRadius(14)
                 .transition(.opacity.combined(with: .scale))
-            } else if viewModel.extensionState == .disconnecting {
+            } else if viewModel.isActuallyDisconnecting || viewModel.extensionState == .disconnecting {
                 // Indicateur visuel pendant la déconnexion
                 HStack(spacing: 12) {
                     ProgressView()
@@ -399,18 +401,43 @@ struct NewMainView: View {
     
     private var modernSideMenu: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Menu Header
-            VStack(alignment: .leading, spacing: 8) {
-                Image("logo-onboarding")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 50)
+            // Menu Header avec gradient moderne
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation {
+                            showMenu = false
+                        }
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.2))
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.top, 60)
+                .padding(.horizontal, 20)
                 
-                Text("Ryvie Connect")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 12) {
+                    Image("logo-onboarding")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 60)
+                    
+                    Text("Ryvie Connect")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text("Votre réseau privé sécurisé")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 24)
             }
-            .padding(30)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
@@ -423,73 +450,82 @@ struct NewMainView: View {
                 )
             )
             
-            // Menu Items
-            VStack(alignment: .leading, spacing: 0) {
-                NavigationLink(destination: SetupKeyView()) {
-                    HStack(spacing: 15) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
-                            .frame(width: 30)
-                        
-                        Text("Setup Key")
-                            .font(.system(size: 18))
-                            .foregroundColor(.black)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 20)
+            // Menu Items avec design moderne
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    // Section Connexion
+                    Text("CONNEXION")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.gray.opacity(0.7))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+                    
+                    ModernMenuButton(
+                        icon: "key.fill",
+                        title: "Clé de connexion",
+                        subtitle: "Gérer votre clé Ryvie",
+                        iconColor: Color(red: 0.36, green: 0.84, blue: 0.95),
+                        destination: AnyView(SetupKeyView())
+                    )
+                    
+                    ModernMenuButton(
+                        icon: "arrow.triangle.2.circlepath",
+                        title: "Nouvelle connexion",
+                        subtitle: "Configurer un nouveau Ryvie",
+                        iconColor: Color(red: 0.95, green: 0.55, blue: 0.25),
+                        action: {
+                            showMenu = false
+                            showNewConnectionAlert = true
+                        }
+                    )
+                    
+                    // Section Informations
+                    Text("INFORMATIONS")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.gray.opacity(0.7))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
+                        .padding(.bottom, 8)
+                    
+                    ModernMenuButton(
+                        icon: "info.circle.fill",
+                        title: "À propos",
+                        subtitle: "Version et informations",
+                        iconColor: Color(red: 0.50, green: 0.50, blue: 0.50),
+                        destination: AnyView(AboutView())
+                    )
+                    
+                    Spacer()
                 }
-                
+            }
+            .background(Color(red: 0.98, green: 0.98, blue: 0.99))
+            
+            // Footer
+            VStack(spacing: 8) {
                 Divider()
                     .background(Color.gray.opacity(0.2))
                 
-                MenuButton(icon: "plus.circle.fill", title: "Nouvelle Connexion", action: {
-                    showMenu = false
-                    viewModel.clearDetails()
-                })
-                
-                Divider()
-                    .background(Color.gray.opacity(0.2))
-                
-                NavigationLink(destination: AboutView()) {
-                    HStack(spacing: 15) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
-                            .frame(width: 30)
-                        
-                        Text("About")
-                            .font(.system(size: 18))
-                            .foregroundColor(.black)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Version \(appVersion)")
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.gray)
+                        
+                        Text("© 2024 Ryvie")
+                            .font(.system(size: 11))
+                            .foregroundColor(.gray.opacity(0.7))
                     }
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 20)
+                    Spacer()
                 }
-                
-                Spacer()
-                
-                // Version
-                Text("Version \(appVersion)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                    .padding(30)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
             }
             .background(Color.white)
         }
-        .frame(width: UIScreen.main.bounds.width * 0.75)
-        .shadow(radius: 10)
+        .frame(width: UIScreen.main.bounds.width * 0.85, height: UIScreen.main.bounds.height)
+        .ignoresSafeArea()
+        .shadow(color: .black.opacity(0.3), radius: 20, x: 5, y: 0)
     }
     
     private var statusTitle: String {
@@ -520,7 +556,29 @@ struct NewMainView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
     }
     
+    private func performNewConnection() {
+        // Déconnecter si connecté
+        if viewModel.extensionState != .disconnected {
+            viewModel.close()
+        }
+        
+        // Effacer la configuration
+        viewModel.clearDetails()
+        
+        // Forcer la redirection vers l'onboarding
+        forceOnboarding = true
+    }
+    
     private func toggleConnection() {
+        // Ne rien faire si on est en train de se connecter ou déconnecter
+        if viewModel.isActuallyConnecting || viewModel.isActuallyDisconnecting {
+            return
+        }
+        
+        if viewModel.extensionState == .connecting || viewModel.extensionState == .disconnecting {
+            return
+        }
+        
         if viewModel.extensionState == .connected {
             viewModel.close()
         } else if viewModel.extensionState == .disconnected {
@@ -734,32 +792,67 @@ struct PeerRowView: View {
     }
 }
 
-struct MenuButton: View {
+struct ModernMenuButton: View {
     let icon: String
     let title: String
-    let action: () -> Void
+    let subtitle: String
+    let iconColor: Color
+    var destination: AnyView? = nil
+    var action: (() -> Void)? = nil
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 15) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
-                    .frame(width: 30)
+        Group {
+            if let destination = destination {
+                NavigationLink(destination: destination) {
+                    buttonContent
+                }
+            } else {
+                Button(action: {
+                    action?()
+                }) {
+                    buttonContent
+                }
+            }
+        }
+    }
+    
+    private var buttonContent: some View {
+        HStack(spacing: 16) {
+            // Icône avec fond coloré
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 48, height: 48)
                 
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(iconColor)
+            }
+            
+            // Texte
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 18))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.black)
                 
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
+                Text(subtitle)
+                    .font(.system(size: 13))
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 30)
-            .padding(.vertical, 20)
+            
+            Spacer()
+            
+            // Chevron
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray.opacity(0.5))
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        .padding(.horizontal, 16)
     }
 }
 

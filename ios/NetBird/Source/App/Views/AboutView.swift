@@ -14,60 +14,108 @@ struct AboutView: View {
     
     var body: some View {
         ZStack {
-            Color("BgPage")
-                .edgesIgnoringSafeArea(.bottom)
+            // Background gradient moderne
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.95, green: 0.97, blue: 0.99),
+                    Color(red: 0.90, green: 0.94, blue: 0.98)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
-            VStack {
-                Image("netbird-logo-menu")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: UIScreen.main.bounds.width * 0.4)
-                    .padding(.top, UIScreen.main.bounds.height * 0.05)
-                    .padding(.bottom, UIScreen.main.bounds.height * 0.04)
-                
-                HStack {
-                    Text("Version")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(Color("TextPrimary"))
-                    Text(getAppVersion())
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundColor(Color("TextPrimary"))
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header avec logo
+                    VStack(spacing: 20) {
+                        Image("logo-onboarding")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 120, height: 120)
+                            .padding(.top, 40)
+                        
+                        Text("Ryvie Connect")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.black)
+                        
+                        Text("Votre réseau privé sécurisé")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    // Carte d'informations
+                    VStack(spacing: 20) {
+                        // Version
+                        InfoCard(
+                            icon: "info.circle.fill",
+                            iconColor: Color(red: 0.36, green: 0.84, blue: 0.95),
+                            title: "Version",
+                            value: getAppVersion()
+                        )
+                        
+                        // Build
+                        InfoCard(
+                            icon: "hammer.fill",
+                            iconColor: Color(red: 0.95, green: 0.70, blue: 0.30),
+                            title: "Build",
+                            value: getBuildNumber()
+                        )
+                    }
+                    .padding(.horizontal, 30)
+                    
+                    Spacer()
+                    
+                    // Footer
+                    VStack(spacing: 12) {
+                        Text("© 2024 Ryvie")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                        
+                        Text("Tous droits réservés")
+                            .font(.system(size: 13))
+                            .foregroundColor(.gray.opacity(0.7))
+                    }
+                    .padding(.bottom, 40)
                 }
-                .padding(.bottom, UIScreen.main.bounds.height * 0.04)
-                
-                Text("Ryvie Connect")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(Color("TextPrimary"))
-                    .padding(.bottom, UIScreen.main.bounds.height * 0.02)
-                
-                Spacer()
-                
-                Text("© 2024 Ryvie. All rights reserved.")
-                    .foregroundColor(.white)
-                    .padding(.bottom, UIScreen.main.bounds.height * 0.01)
             }
             
             if viewModel.showBetaProgramAlert {
-                Color.black.opacity(0.4)
-                    .edgesIgnoringSafeArea(.all)
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
                     .onTapGesture {
                         dismissBetaProgramAlert()
                     }
                 
                 BetaProgramAlert(viewModel: viewModel, isPresented: $viewModel.showBetaProgramAlert)
-                    .frame(maxWidth: UIScreen.main.bounds.width * 0.9)
+                    .padding(.horizontal, 30)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: CustomBackButton(text: "About", action: {
-            presentationMode.wrappedValue.dismiss()
-        }))
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Retour")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
+                }
+            }
+        }
     }
     
     private func getAppVersion() -> String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+    }
+    
+    private func getBuildNumber() -> String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
     }
     
     private func dismissBetaProgramAlert() {
@@ -121,6 +169,45 @@ struct BetaProgramAlert: View {
         .background(Color("BgSideDrawer"))
         .cornerRadius(15)
         .shadow(radius: 10)
+    }
+}
+
+struct InfoCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icône
+            ZStack {
+                Circle()
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(iconColor)
+            }
+            
+            // Texte
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.gray)
+                
+                Text(value)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.black)
+            }
+            
+            Spacer()
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.06), radius: 12, x: 0, y: 4)
     }
 }
 

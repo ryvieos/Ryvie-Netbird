@@ -44,6 +44,10 @@ class ViewModel: ObservableObject {
     @Published var extensionStateText = "Disconnected"
     @Published var connectPressed = false
     @Published var disconnectPressed = false
+    @Published var showConnectionError = false
+    @Published var connectionErrorMessage = ""
+    @Published var isActuallyConnecting = false
+    @Published var isActuallyDisconnecting = false
     @Published var traceLogsEnabled: Bool {
         didSet {
             self.showLogLevelChangedAlert = true
@@ -87,38 +91,99 @@ class ViewModel: ObservableObject {
     func connect()  {
         print("🚀 [ViewModel] connect() called")
         print("🔍 [ViewModel] Current extension state: \(self.extensionState)")
+        
+        // Réinitialiser les erreurs précédentes
+        self.showConnectionError = false
+        self.connectionErrorMessage = ""
+        
         self.connectPressed = true
-        print("✅ [ViewModel] connectPressed set to true")
+        self.isActuallyConnecting = true
+        print("✅ [ViewModel] connectPressed and isActuallyConnecting set to true")
+        
         DispatchQueue.main.async {
             print("🔌 [ViewModel] Starting extension...")
             self.buttonLock = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.buttonLock = false
-                print("🔓 [ViewModel] Button lock released")
-            }
+            
             Task {
                 print("⏳ [ViewModel] Calling networkExtensionAdapter.start()...")
-                await self.networkExtensionAdapter.start()
-                print("✅ [ViewModel] networkExtensionAdapter.start() completed")
-                print("🔍 [ViewModel] New extension state: \(self.extensionState)")
-                print("✅ [ViewModel] connectPressed set to false")
+                
+                do {
+                    try await self.networkExtensionAdapter.startWithErrorHandling()
+                    print("✅ [ViewModel] networkExtensionAdapter.start() completed")
+                    
+                    // Attendre un peu que l'état se mette à jour
+                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
+                    
+                    // Forcer la mise à jour de l'état
+                    await MainActor.run {
+                        self.checkExtensionState()
+                    }
+                    
+                    // Attendre encore un peu pour que checkExtensionState fasse effet
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                    
+                    // Vérifier l'état final
+                    print("🔍 [ViewModel] Final check - extensionState: \(self.extensionState)")
+                    
+                    // Ne pas afficher d'erreur, laisser l'utilisateur voir l'état réel
+                    // L'erreur sera gérée par le monitoring continu si nécessaire
+                    await MainActor.run {
+                        self.isActuallyConnecting = false
+                        print("✅ [ViewModel] Connection process completed, state: \(self.extensionState)")
+                    }
+                    
+                } catch {
+                    print("❌ [ViewModel] Error during connection: \(error.localizedDescription)")
+                    await MainActor.run {
+                        self.showConnectionError = true
+                        self.connectionErrorMessage = "Un problème est survenu lors de la configuration. Veuillez réessayer."
+                        self.isActuallyConnecting = false
+                        self.extensionState = .disconnected
+                    }
+                }
+                
+                await MainActor.run {
+                    self.buttonLock = false
+                    print("🔓 [ViewModel] Button lock released")
+                }
             }
         }
     }
     
     func close() -> Void {
+        print("🔴 [ViewModel] close() called")
         self.disconnectPressed = true
+        self.isActuallyDisconnecting = true
+        
         DispatchQueue.main.async {
-            print("Stopping extension")
+            print("🛑 [ViewModel] Stopping extension")
             self.buttonLock = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.buttonLock = false
-            }
+            
             self.networkExtensionAdapter.stop()
+            
+            // Attendre que la déconnexion soit effective
+            Task {
+                var attempts = 0
+                while self.extensionState != .disconnected && attempts < 20 {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                    attempts += 1
+                    print("⏳ [ViewModel] Waiting for disconnection... attempt \(attempts)/20, state: \(self.extensionState)")
+                }
+                
+                await MainActor.run {
+                    print("✅ [ViewModel] Disconnection complete, resetting flags")
+                    self.isActuallyDisconnecting = false
+                    self.disconnectPressed = false
+                    self.buttonLock = false
+                }
+            }
         }
     }
     
     func startPollingDetails() {
+        // Vérifier l'état immédiatement au démarrage
+        self.checkExtensionState()
+        
         networkExtensionAdapter.startTimer { details in
             
             self.checkExtensionState()
@@ -179,8 +244,10 @@ class ViewModel: ObservableObject {
             let statuses : [NEVPNStatus] = [.connected, .disconnected, .connecting, .disconnecting]
             DispatchQueue.main.async {
                 if statuses.contains(status) && self.extensionState != status {
-                    print("Changing extension status")
+                    print("🔄 [ViewModel] Changing extension status from \(self.extensionState.rawValue) to \(status.rawValue)")
                     self.extensionState = status
+                } else if statuses.contains(status) {
+                    print("✅ [ViewModel] Extension status already up to date: \(status.rawValue)")
                 }
             }
         }

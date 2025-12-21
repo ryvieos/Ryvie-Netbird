@@ -16,94 +16,263 @@ struct SetupKeyView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var hasExistingKey = false
+    @State private var showDeleteKeyAlert = false
     
     var body: some View {
         ZStack {
-            Color("BgPage")
-                .edgesIgnoringSafeArea(.all)
+            // Background gradient moderne
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.95, green: 0.97, blue: 0.99),
+                    Color(red: 0.90, green: 0.94, blue: 0.98)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Setup Key Management")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(Color("TextPrimary"))
-                        .padding(.top, UIScreen.main.bounds.height * 0.04)
-                    
-                    if hasExistingKey {
-                        Text("A setup key is currently configured. You can remove it to enter a new one.")
-                            .multilineTextAlignment(.leading)
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(Color("TextSecondary"))
-                            .fixedSize(horizontal: false, vertical: true)
-                        
-                        SolidButton(text: "Remove Setup Key") {
-                            removeSetupKey()
+                VStack(spacing: 24) {
+                    // Header avec icône
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color(red: 0.36, green: 0.84, blue: 0.95),
+                                            Color(red: 0.20, green: 0.60, blue: 0.80)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 80, height: 80)
+                                .shadow(color: Color(red: 0.36, green: 0.84, blue: 0.95).opacity(0.3), radius: 15, x: 0, y: 8)
+                            
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 36, weight: .semibold))
+                                .foregroundColor(.white)
                         }
-                        .padding(.top, 10)
-                    } else {
-                        Text("Enter your setup key to connect to your Ryvie network.")
-                            .multilineTextAlignment(.leading)
-                            .font(.system(size: 16, weight: .regular))
-                            .foregroundColor(Color("TextSecondary"))
-                            .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 40)
                         
-                        Text("Setup Key")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color("TextPrimary"))
-                            .padding(.top, 10)
+                        Text("Clé de connexion")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(.black)
                         
-                        CustomTextField(
-                            placeholder: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-                            text: $setupKey,
-                            secure: .constant(false)
-                        )
-                        .autocapitalization(.none)
-                        .disableAutocorrection(true)
-                        
-                        if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
-                            Text("Invalid setup key format")
-                                .foregroundColor(.red)
-                                .font(.system(size: 14))
-                        }
-                        
-                        SolidButton(text: isVerifying ? "Saving..." : "Save Key") {
-                            saveSetupKey()
-                        }
-                        .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isVerifying)
-                        .padding(.top, 10)
+                        Text(hasExistingKey ? "Gérer votre clé Ryvie" : "Connectez-vous à votre réseau")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(.horizontal, 30)
                     
-                    Spacer()
+                    // Contenu principal
+                    VStack(spacing: 20) {
+                        if hasExistingKey {
+                            // Carte d'état connecté
+                            VStack(spacing: 16) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(Color(red: 0.30, green: 0.85, blue: 0.40))
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("État de la connexion")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.gray)
+                                        
+                                        Text("Clé configurée")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.black)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .padding(20)
+                                .background(Color(red: 0.30, green: 0.85, blue: 0.40).opacity(0.1))
+                                .cornerRadius(16)
+                                
+                                Text("Une clé de connexion est actuellement configurée. Vous pouvez la supprimer pour en configurer une nouvelle.")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 8)
+                                
+                                // Bouton supprimer
+                                Button(action: {
+                                    showDeleteKeyAlert = true
+                                }) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "trash.fill")
+                                            .font(.system(size: 16, weight: .semibold))
+                                        
+                                        Text("Supprimer la clé")
+                                            .font(.system(size: 17, weight: .semibold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.95, green: 0.55, blue: 0.25),
+                                                Color(red: 0.95, green: 0.40, blue: 0.20)
+                                            ]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .cornerRadius(14)
+                                    .shadow(color: Color(red: 0.95, green: 0.55, blue: 0.25).opacity(0.4), radius: 12, x: 0, y: 6)
+                                }
+                                .padding(.top, 8)
+                            }
+                            .padding(24)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+                        } else {
+                            // Formulaire de saisie
+                            VStack(alignment: .leading, spacing: 16) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Entrez votre clé")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(.black)
+                                    
+                                    Text("Format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                // Champ de texte moderne
+                                VStack(alignment: .leading, spacing: 8) {
+                                    TextField("Clé de connexion", text: $setupKey)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.black)
+                                        .padding(16)
+                                        .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(
+                                                    !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) 
+                                                        ? Color.red.opacity(0.5)
+                                                        : Color.clear,
+                                                    lineWidth: 2
+                                                )
+                                        )
+                                        .autocapitalization(.none)
+                                        .disableAutocorrection(true)
+                                    
+                                    if !setupKey.isEmpty && !viewModel.isValidSetupKey(setupKey) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: "exclamationmark.circle.fill")
+                                                .font(.system(size: 12))
+                                            Text("Format de clé invalide")
+                                                .font(.system(size: 13, weight: .medium))
+                                        }
+                                        .foregroundColor(.red)
+                                    }
+                                }
+                                
+                                // Bouton sauvegarder
+                                Button(action: {
+                                    saveSetupKey()
+                                }) {
+                                    HStack(spacing: 10) {
+                                        if isVerifying {
+                                            ProgressView()
+                                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                .scaleEffect(0.9)
+                                        } else {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 18, weight: .semibold))
+                                        }
+                                        
+                                        Text(isVerifying ? "Enregistrement..." : "Enregistrer")
+                                            .font(.system(size: 17, weight: .semibold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color(red: 0.36, green: 0.84, blue: 0.95),
+                                                Color(red: 0.20, green: 0.60, blue: 0.80)
+                                            ]),
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .cornerRadius(14)
+                                    .shadow(color: Color(red: 0.36, green: 0.84, blue: 0.95).opacity(0.4), radius: 12, x: 0, y: 6)
+                                    .opacity((setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isVerifying) ? 0.5 : 1.0)
+                                }
+                                .disabled(setupKey.isEmpty || !viewModel.isValidSetupKey(setupKey) || isVerifying)
+                                .padding(.top, 8)
+                            }
+                            .padding(24)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .shadow(color: .black.opacity(0.08), radius: 20, x: 0, y: 10)
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    
+                    Spacer(minLength: 40)
                 }
-                .padding([.leading, .trailing], UIScreen.main.bounds.width * 0.10)
             }
             .ignoresSafeArea(.keyboard)
             
+            // Alerte d'erreur moderne
             if showErrorAlert {
-                Color.black.opacity(0.4)
-                    .edgesIgnoringSafeArea(.all)
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
                     .onTapGesture {
                         showErrorAlert = false
                     }
                 
-                ErrorAlert(
+                ModernErrorAlert(
                     isPresented: $showErrorAlert,
                     errorMessage: errorMessage
                 )
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.9)
+                .padding(.horizontal, 30)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: CustomBackButton(text: "Setup Key") {
-            presentationMode.wrappedValue.dismiss()
-        })
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Retour")
+                            .font(.system(size: 17))
+                    }
+                    .foregroundColor(Color(red: 0.36, green: 0.84, blue: 0.95))
+                }
+            }
+        }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
         .onAppear {
             checkForExistingKey()
+        }
+        .alert(isPresented: $showDeleteKeyAlert) {
+            Alert(
+                title: Text("⚠️ Supprimer la clé ?"),
+                message: Text("Cette action va supprimer votre clé de connexion. Pour vous reconnecter, vous devrez :\n\n• Être sur le même réseau que votre Ryvie\n• Ou avoir votre clé de connexion"),
+                primaryButton: .destructive(Text("Supprimer")) {
+                    removeSetupKey()
+                },
+                secondaryButton: .cancel(Text("Annuler"))
+            )
         }
     }
     
@@ -182,29 +351,64 @@ struct SetupKeyView: View {
     }
 }
 
-struct ErrorAlert: View {
+struct ModernErrorAlert: View {
     @Binding var isPresented: Bool
     var errorMessage: String
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image("exclamation-circle")
-                .padding(.top, 20)
-            Text("Registration Failed")
-                .font(.title)
-                .foregroundColor(Color("TextAlert"))
-            Text(errorMessage)
-                .foregroundColor(Color("TextAlert"))
-                .multilineTextAlignment(.center)
-            SolidButton(text: "Ok") {
-                isPresented = false
+        VStack(spacing: 24) {
+            // Icône d'erreur
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.15))
+                    .frame(width: 70, height: 70)
+                
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundColor(.red)
             }
-            .padding(.top, 20)
+            .padding(.top, 8)
+            
+            VStack(spacing: 12) {
+                Text("⚠️ Erreur")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.black)
+                
+                Text(errorMessage)
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            // Bouton OK
+            Button(action: {
+                isPresented = false
+            }) {
+                Text("Compris")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.red,
+                                Color.red.opacity(0.8)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(14)
+                    .shadow(color: Color.red.opacity(0.4), radius: 12, x: 0, y: 6)
+            }
+            .padding(.top, 8)
         }
-        .padding()
-        .background(Color("BgSideDrawer"))
-        .cornerRadius(15)
-        .shadow(radius: 10)
+        .padding(28)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: .black.opacity(0.2), radius: 30, x: 0, y: 15)
     }
 }
 

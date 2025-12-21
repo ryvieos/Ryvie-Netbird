@@ -387,24 +387,39 @@ struct OnboardingView: View {
                 isConnecting = false
             }
             
-            // Attendre 1 seconde pour afficher le message de succès
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
             
             // Lancer la connexion VPN automatiquement
             print("🚀 [OnboardingView] Lancement de la connexion VPN automatique...")
+            
+            // Garder l'animation de chargement visible
             await MainActor.run {
                 viewModel.connect()
             }
             
-            // Attendre encore 0.5 secondes avant de fermer
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            // Attendre que la connexion soit établie ou échoue
+            var waitAttempts = 0
+            while viewModel.extensionState != .connected && viewModel.extensionState != .disconnected && waitAttempts < 40 {
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                waitAttempts += 1
+            }
             
-            // La vue devrait se fermer automatiquement car statusDetailsValid devient true
+            // Attendre encore un peu si connecté
+            if viewModel.extensionState == .connected {
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+            }
+            
             print("✅ [OnboardingView] Configuration terminée, transition vers l'écran principal")
             
-        } catch {
             await MainActor.run {
-                errorMessage = "Clé de configuration invalide. Veuillez vérifier et réessayer."
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    autoConnecting = false
+                }
+            }
+            
+        } catch {
+            print("❌ [OnboardingView] Error: \(error.localizedDescription)")
+            await MainActor.run {
+                errorMessage = "Impossible d'enregistrer la clé. Vérifiez qu'elle est correcte."
                 showError = true
                 isConnecting = false
                 autoConnecting = false

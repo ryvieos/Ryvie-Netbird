@@ -43,53 +43,58 @@ public class NetworkExtensionAdapter: ObservableObject {
     func start() async {
         print("🚀 [NetworkExtensionAdapter] start() called")
         do {
-            print("⚙️ [NetworkExtensionAdapter] Configuring manager...")
-            try await configureManager()
-            print("✅ [NetworkExtensionAdapter] Extension configured successfully")
-            
-            // Observer les changements de status
-            NotificationCenter.default.addObserver(
-                forName: .NEVPNStatusDidChange,
-                object: self.vpnManager?.connection,
-                queue: .main
-            ) { notification in
-                if let connection = notification.object as? NEVPNConnection {
-                    print("🔔 [NetworkExtensionAdapter] VPN Status changed to: \(connection.status.rawValue)")
-                    switch connection.status {
-                    case .invalid:
-                        print("   Status: INVALID")
-                    case .disconnected:
-                        print("   Status: DISCONNECTED")
-                    case .connecting:
-                        print("   Status: CONNECTING")
-                    case .connected:
-                        print("   Status: CONNECTED")
-                    case .reasserting:
-                        print("   Status: REASSERTING")
-                    case .disconnecting:
-                        print("   Status: DISCONNECTING")
-                    @unknown default:
-                        print("   Status: UNKNOWN")
-                    }
-                }
-            }
-            
-            // Observer les erreurs de configuration
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name.NEVPNConfigurationChange,
-                object: self.vpnManager,
-                queue: .main
-            ) { notification in
-                print("🔔 [NetworkExtensionAdapter] VPN Configuration changed")
-            }
-            
-            print("🔐 [NetworkExtensionAdapter] Checking if login is required...")
-            await loginIfRequired()
-            print("✅ [NetworkExtensionAdapter] start() completed")
+            try await startWithErrorHandling()
         } catch {
             print("❌ [NetworkExtensionAdapter] Failed to start extension: \(error)")
             print("❌ [NetworkExtensionAdapter] Error details: \(error.localizedDescription)")
         }
+    }
+    
+    func startWithErrorHandling() async throws {
+        print("🚀 [NetworkExtensionAdapter] startWithErrorHandling() called")
+        print("⚙️ [NetworkExtensionAdapter] Configuring manager...")
+        try await configureManager()
+        print("✅ [NetworkExtensionAdapter] Extension configured successfully")
+        
+        // Observer les changements de status
+        NotificationCenter.default.addObserver(
+            forName: .NEVPNStatusDidChange,
+            object: self.vpnManager?.connection,
+            queue: .main
+        ) { notification in
+            if let connection = notification.object as? NEVPNConnection {
+                print("🔔 [NetworkExtensionAdapter] VPN Status changed to: \(connection.status.rawValue)")
+                switch connection.status {
+                case .invalid:
+                    print("   Status: INVALID")
+                case .disconnected:
+                    print("   Status: DISCONNECTED")
+                case .connecting:
+                    print("   Status: CONNECTING")
+                case .connected:
+                    print("   Status: CONNECTED")
+                case .reasserting:
+                    print("   Status: REASSERTING")
+                case .disconnecting:
+                    print("   Status: DISCONNECTING")
+                @unknown default:
+                    print("   Status: UNKNOWN")
+                }
+            }
+        }
+        
+        // Observer les erreurs de configuration
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name.NEVPNConfigurationChange,
+            object: self.vpnManager,
+            queue: .main
+        ) { notification in
+            print("🔔 [NetworkExtensionAdapter] VPN Configuration changed")
+        }
+        
+        print("🔐 [NetworkExtensionAdapter] Checking if login is required...")
+        await loginIfRequired()
+        print("✅ [NetworkExtensionAdapter] startWithErrorHandling() completed")
     }
 
     private func configureManager() async throws {
